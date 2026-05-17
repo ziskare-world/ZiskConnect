@@ -5,6 +5,9 @@ import nodemailer from 'nodemailer';
 import { connectMongo } from './mongo.js';
 
 const COOKIE_NAME = 'zisk_session';
+const MAIL_TIMEOUT_MS = Number(process.env.MAIL_TIMEOUT_MS || 15000);
+const MAIL_QUEUE_DELAY_MS = Number(process.env.MAIL_QUEUE_DELAY_MS || 1000);
+const MAIL_QUEUE_MAX_SIZE = Number(process.env.MAIL_QUEUE_MAX_SIZE || 50);
 
 function base64url(input) {
   return Buffer.from(input).toString('base64url');
@@ -128,12 +131,33 @@ function createPairingToken() {
   return crypto.randomBytes(16).toString('hex');
 }
 
+async function withTimeout(promise, milliseconds, message) {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(message)), milliseconds);
+      })
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function delay(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
 export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmailAppPassword, sessionSecret }) {
   const router = express.Router();
   const enabled = Boolean(mongoUri);
   const mailEnabled = Boolean(gmailUser && gmailAppPassword);
   let dbPromise = null;
   let transporter = null;
+  let mailQueue = Promise.resolve();
+  let mailQueueSize = 0;
+  let lastMailSentAt = 0;
 
   function db() {
     if (!enabled) throw new Error('MongoDB is not configured');
@@ -153,12 +177,43 @@ export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmail
     if (!mailEnabled) return null;
     transporter ||= nodemailer.createTransport({
       service: 'gmail',
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 100,
+      rateDelta: 1000,
+      rateLimit: 1,
+      connectionTimeout: MAIL_TIMEOUT_MS,
+      greetingTimeout: MAIL_TIMEOUT_MS,
+      socketTimeout: MAIL_TIMEOUT_MS,
       auth: {
         user: gmailUser,
         pass: gmailAppPassword
       }
     });
     return transporter;
+  }
+
+  async function enqueueMail(task) {
+    if (mailQueueSize >= MAIL_QUEUE_MAX_SIZE) {
+      throw new Error('Email queue is busy. Please try again in a minute.');
+    }
+    mailQueueSize += 1;
+    const queuedTask = mailQueue
+      .catch(() => {})
+      .then(async () => {
+        const waitFor = Math.max(0, MAIL_QUEUE_DELAY_MS - (Date.now() - lastMailSentAt));
+        if (waitFor > 0) await delay(waitFor);
+        try {
+          return await task();
+        } finally {
+          lastMailSentAt = Date.now();
+        }
+      })
+      .finally(() => {
+        mailQueueSize = Math.max(0, mailQueueSize - 1);
+      });
+    mailQueue = queuedTask.catch(() => {});
+    return queuedTask;
   }
 
   async function sendOtp(email, purpose = 'verify') {
@@ -177,18 +232,29 @@ export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmail
       console.log(`OTP for ${email}: ${otp}`);
       return;
     }
-    await transport.sendMail({
-      from: { name: 'Zisk Connect', address: gmailUser },
-      to: email,
-      replyTo: gmailUser,
-      subject: `${otp} is your Zisk Connect verification code`,
-      text: otpEmailText(otp, email, purpose),
-      html: otpEmailHtml(otp, email, purpose),
-      headers: {
-        'X-Zisk-Connect-Purpose': 'email-verification',
-        'X-Auto-Response-Suppress': 'All'
-      }
-    });
+    try {
+      await enqueueMail(() => withTimeout(
+          transport.sendMail({
+            from: { name: 'Zisk Connect', address: gmailUser },
+            to: email,
+            replyTo: gmailUser,
+            subject: `${otp} is your Zisk Connect verification code`,
+            text: otpEmailText(otp, email, purpose),
+            html: otpEmailHtml(otp, email, purpose),
+            headers: {
+              'X-Zisk-Connect-Purpose': 'email-verification',
+              'X-Auto-Response-Suppress': 'All'
+            }
+          }),
+          MAIL_TIMEOUT_MS + 2000,
+          'OTP email timed out. Check hosted Gmail SMTP environment variables and network access.'
+        ));
+    } catch (error) {
+      console.error('OTP email send failed:', error.message);
+      throw new Error(error.message.includes('queue')
+        ? error.message
+        : 'OTP email could not be sent. Check Gmail SMTP settings on the hosted server.');
+    }
   }
 
   function currentSession(req) {
