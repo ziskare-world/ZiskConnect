@@ -152,7 +152,9 @@ function delay(milliseconds) {
 export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmailAppPassword, sessionSecret }) {
   const router = express.Router();
   const enabled = Boolean(mongoUri);
-  const mailEnabled = Boolean(gmailUser && gmailAppPassword);
+  const normalizedGmailUser = String(gmailUser || '').trim();
+  const normalizedGmailAppPassword = String(gmailAppPassword || '').replace(/\s+/g, '');
+  const mailEnabled = Boolean(normalizedGmailUser && normalizedGmailAppPassword);
   let dbPromise = null;
   let transporter = null;
   let mailQueue = Promise.resolve();
@@ -178,7 +180,9 @@ export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmail
   function mailer() {
     if (!mailEnabled) return null;
     transporter ||= nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
       pool: true,
       maxConnections: 1,
       maxMessages: 100,
@@ -188,8 +192,11 @@ export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmail
       greetingTimeout: MAIL_TIMEOUT_MS,
       socketTimeout: MAIL_TIMEOUT_MS,
       auth: {
-        user: gmailUser,
-        pass: gmailAppPassword
+        user: normalizedGmailUser,
+        pass: normalizedGmailAppPassword
+      },
+      tls: {
+        servername: 'smtp.gmail.com'
       }
     });
     return transporter;
@@ -237,9 +244,9 @@ export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmail
     try {
       await enqueueMail(() => withTimeout(
           transport.sendMail({
-            from: { name: 'Zisk Connect', address: gmailUser },
+            from: { name: 'Zisk Connect', address: normalizedGmailUser },
             to: email,
-            replyTo: gmailUser,
+            replyTo: normalizedGmailUser,
             subject: `${otp} is your Zisk Connect verification code`,
             text: otpEmailText(otp, email, purpose),
             html: otpEmailHtml(otp, email, purpose),
@@ -252,7 +259,13 @@ export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmail
           'OTP email timed out. Check hosted Gmail SMTP environment variables and network access.'
         ));
     } catch (error) {
-      console.error('OTP email send failed:', error.message);
+      console.error('OTP email send failed:', {
+        message: error.message,
+        code: error.code,
+        command: error.command,
+        responseCode: error.responseCode,
+        response: error.response
+      });
       throw new Error(error.message.includes('queue')
         ? error.message
         : 'OTP email could not be sent. Check Gmail SMTP settings on the hosted server.');
