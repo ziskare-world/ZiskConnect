@@ -99,11 +99,13 @@ Object.assign(els, {
   authSubmit: document.querySelector('#authSubmit'),
   logoutButton: document.querySelector('#logoutButton'),
   resendOtpTimer: document.querySelector('#resendOtpTimer'),
-  forgotPassword: document.querySelector('#forgotPassword')
+  forgotPassword: document.querySelector('#forgotPassword'),
+  screenLoader: document.querySelector('#screenLoader')
 });
 
 let resendOtpInterval = null;
 let healthQueueInterval = null;
+let loaderDepth = 0;
 const eyeIcon = `
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M2.2 12s3.5-6 9.8-6 9.8 6 9.8 6-3.5 6-9.8 6-9.8-6-9.8-6z"></path>
@@ -128,6 +130,25 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
+}
+
+function showLoader() {
+  loaderDepth += 1;
+  els.screenLoader.classList.remove('hidden');
+}
+
+function hideLoader() {
+  loaderDepth = Math.max(0, loaderDepth - 1);
+  if (loaderDepth === 0) els.screenLoader.classList.add('hidden');
+}
+
+async function withLoader(action) {
+  showLoader();
+  try {
+    return await action();
+  } finally {
+    hideLoader();
+  }
 }
 
 function renderDevices() {
@@ -677,17 +698,19 @@ function closeDevicePairingModal() {
 }
 
 async function openDevicePairingModal() {
-  els.devicePairingResult.textContent = 'Generating device QR...';
+  els.devicePairingResult.textContent = '';
   els.devicePairingQr.removeAttribute('src');
   els.devicePairingModal.classList.remove('hidden');
-  const response = await fetch('/api/devices/pairings', { method: 'POST' });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Device pairing failed');
-  const host = pairingHost();
-  const scheme = pairingScheme();
-  const port = pairingPort(scheme);
-  els.devicePairingQr.src = `/api/devices/pairings/${encodeURIComponent(data.pairing.id)}/qr.svg?scheme=${encodeURIComponent(scheme)}&host=${encodeURIComponent(host)}&port=${encodeURIComponent(port)}&v=${Date.now()}`;
-  els.devicePairingResult.textContent = 'Waiting for Android app scan...';
+  await withLoader(async () => {
+    const response = await fetch('/api/devices/pairings', { method: 'POST', credentials: 'same-origin' });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Device pairing failed');
+    const host = pairingHost();
+    const scheme = pairingScheme();
+    const port = pairingPort(scheme);
+    els.devicePairingQr.src = `/api/devices/pairings/${encodeURIComponent(data.pairing.id)}/qr.svg?scheme=${encodeURIComponent(scheme)}&host=${encodeURIComponent(host)}&port=${encodeURIComponent(port)}&v=${Date.now()}`;
+    els.devicePairingResult.textContent = 'Scan this QR from the Android app.';
+  });
 }
 
 document.addEventListener('click', async (event) => {
@@ -700,12 +723,12 @@ document.addEventListener('click', async (event) => {
     const name = device?.deviceName || device?.model || 'this device';
     if (!confirm(`Remove ${name} from this dashboard? Connected phone must scan the QR again to reappear.`)) return;
     try {
-      const data = await fetch(`/api/devices/${encodeURIComponent(deviceButton.dataset.id)}`, { method: 'DELETE' })
+      const data = await withLoader(() => fetch(`/api/devices/${encodeURIComponent(deviceButton.dataset.id)}`, { method: 'DELETE', credentials: 'same-origin' })
         .then(async (response) => {
           const body = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(body.error || 'Device remove failed');
           return body;
-        });
+        }));
       state.devices = data.devices || [];
       state.queue = data.queue || state.queue;
       renderAll();
@@ -718,9 +741,9 @@ document.addEventListener('click', async (event) => {
   const button = event.target.closest('.deleteLog');
   if (!button) return;
   try {
-    const data = await authedFetch(`/api/sms/logs/${encodeURIComponent(button.dataset.id)}`, {
+    const data = await withLoader(() => authedFetch(`/api/sms/logs/${encodeURIComponent(button.dataset.id)}`, {
       method: 'DELETE'
-    });
+    }));
     state.smsLogs = data.smsLogs || [];
     renderAll();
   } catch (error) {
@@ -734,7 +757,8 @@ els.showSignup.addEventListener('click', () => setAuthMode('signup'));
 els.forgotPassword.addEventListener('click', () => setAuthMode('forgot'));
 els.authSubmit.addEventListener('click', async () => {
   els.authSubmit.disabled = true;
-  els.authMessage.textContent = 'Please wait...';
+  els.authMessage.textContent = '';
+  showLoader();
   try {
     if (state.otpRequired) {
       if (state.authMode === 'forgot') {
@@ -806,19 +830,20 @@ els.authSubmit.addEventListener('click', async () => {
     if (error.data?.otpRequired) showOtp(error.data.email || els.authEmail.value.trim(), 'signup');
     else els.authMessage.textContent = error.message;
   } finally {
+    hideLoader();
     els.authSubmit.disabled = false;
   }
 });
 
 els.resendOtp.addEventListener('click', async () => {
   try {
-    await authFetch('/api/auth/resend-otp', {
+    await withLoader(() => authFetch('/api/auth/resend-otp', {
       method: 'POST',
       body: JSON.stringify({
         email: state.otpEmail,
         purpose: state.authMode === 'forgot' ? 'password_reset' : 'signup'
       })
-    }).then((data) => {
+    })).then((data) => {
       startOtpResendTimer(data.retryAfter || 60);
     });
     els.authMessage.textContent = 'OTP sent again. Please check Inbox and Spam/Promotions.';
@@ -854,13 +879,13 @@ els.applicationsList.addEventListener('click', async (event) => {
   try {
     if (regenerate) {
       if (!confirm('Regenerate this API key? The old key will stop working immediately.')) return;
-      const data = await authedFetch(`/api/applications/${encodeURIComponent(regenerate.dataset.id)}/regenerate-key`, { method: 'POST' });
+      const data = await withLoader(() => authedFetch(`/api/applications/${encodeURIComponent(regenerate.dataset.id)}/regenerate-key`, { method: 'POST' }));
       state.applications = data.applications || [];
       renderApplications(data.application?.apiKey || '');
     }
     if (remove) {
       if (!confirm('Delete this application? Its API key will stop working immediately.')) return;
-      const data = await authedFetch(`/api/applications/${encodeURIComponent(remove.dataset.id)}`, { method: 'DELETE' });
+      const data = await withLoader(() => authedFetch(`/api/applications/${encodeURIComponent(remove.dataset.id)}`, { method: 'DELETE' }));
       state.applications = data.applications || [];
       renderApplications();
     }
@@ -871,13 +896,13 @@ els.applicationsList.addEventListener('click', async (event) => {
 
 els.createApplication.addEventListener('click', async () => {
   els.createApplication.disabled = true;
-  els.applicationResult.textContent = 'Generating API key...';
+  els.applicationResult.textContent = '';
   try {
-    const data = await authedFetch('/api/applications', {
+    const data = await withLoader(() => authedFetch('/api/applications', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ name: els.applicationName.value.trim() })
-    });
+    }));
     state.applications = data.applications || [];
     renderApplications(data.application?.apiKey || '');
     closeApplicationModal();
@@ -891,7 +916,7 @@ els.createApplication.addEventListener('click', async () => {
 els.clearLogs.addEventListener('click', async () => {
   if (!confirm('Delete all SMS logs from this dashboard?')) return;
   try {
-    const data = await authedFetch('/api/sms/logs', { method: 'DELETE' });
+    const data = await withLoader(() => authedFetch('/api/sms/logs', { method: 'DELETE' }));
     state.smsLogs = data.smsLogs || [];
     if (state.health) state.health = { ...state.health, smsLogCount: state.smsLogs.length };
     renderAll();
@@ -921,10 +946,11 @@ els.exportCsv.addEventListener('click', () => downloadExport('/api/sms/export.cs
 
 els.send.addEventListener('click', async () => {
   els.send.disabled = true;
-  els.sendResult.textContent = 'Sending command to phone...';
+  els.sendResult.textContent = '';
   try {
-    const response = await fetch('/api/dashboard/send', {
+    const response = await withLoader(() => fetch('/api/dashboard/send', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: {
         'content-type': 'application/json'
       },
@@ -933,7 +959,7 @@ els.send.addEventListener('click', async () => {
         body: els.body.value,
         flash: els.flash.checked
       })
-    });
+    }));
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Send failed');
     els.sendResult.textContent = `Command queued: ${data.command.id}`;
@@ -945,8 +971,10 @@ els.send.addEventListener('click', async () => {
 });
 
 async function startDashboard() {
-  await loadState();
-  await Promise.all([loadApplications(), loadHealthAndQueue()]);
+  await withLoader(async () => {
+    await loadState();
+    await Promise.all([loadApplications(), loadHealthAndQueue()]);
+  });
   connectSocket();
   startHealthQueuePolling();
 }
