@@ -1,0 +1,19 @@
+{
+  "name": "android-sms-bridge-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "check": "node --check src/server.js",
+    "install-apk": "powershell -NoProfile -Command \"& \\\"$env:LOCALAPPDATA\\Android\\Sdk\\platform-tools\\adb.exe\\\" install -r \\\"D:\\\\Ziskconnect\\\\android\\\\app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\\\"\""
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
+    "mongodb": "^7.2.0",
+    "nodemailer": "^8.0.7",
+    "qrcode": "^1.5.4",
+    "ws": "^8.17.1"
+  }
+}

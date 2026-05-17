@@ -1,0 +1,719 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+  background: #071018;
+  color: #f3f8fc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    linear-gradient(140deg, rgba(93, 225, 255, 0.08), transparent 34%),
+    linear-gradient(30deg, rgba(124, 255, 178, 0.06), transparent 28%),
+    #071018;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 20px;
+}
+
+h2 {
+  font-size: 26px;
+}
+
+h3 {
+  font-size: 17px;
+  margin-bottom: 12px;
+}
+
+h4 {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+button,
+input,
+textarea,
+select {
+  min-height: 42px;
+  border-radius: 6px;
+  font: inherit;
+}
+
+button {
+  border: 0;
+  background: #5de1ff;
+  color: #071018;
+  padding: 0 16px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.linkButton {
+  min-height: auto;
+  width: fit-content;
+  justify-self: center;
+  padding: 4px 6px;
+  background: transparent;
+  color: #5de1ff;
+  border: 0;
+  font-weight: 700;
+}
+
+a {
+  color: inherit;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  border: 1px solid #304458;
+  background: #0c1620;
+  color: #f3f8fc;
+  padding: 10px 12px;
+}
+
+.passwordField {
+  position: relative;
+  display: grid;
+}
+
+.passwordField input {
+  padding-right: 52px;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  width: 34px;
+  min-height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #304458;
+  border-radius: 5px;
+  background: #182433;
+  color: #d9e8f2;
+}
+
+.passwordToggle svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 42px;
+}
+
+code {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #0c1620;
+  color: #5de1ff;
+  overflow-wrap: anywhere;
+}
+
+pre {
+  margin: 0;
+  overflow: auto;
+}
+
+pre code {
+  display: block;
+  min-height: 270px;
+  white-space: pre;
+}
+
+.appShell {
+  width: min(1420px, calc(100vw - 28px));
+  min-height: calc(100vh - 28px);
+  margin: 14px auto;
+  display: grid;
+  grid-template-columns: 286px 1fr;
+  gap: 16px;
+}
+
+.sidebar,
+.workspaceHeader,
+.panel,
+.pairCard,
+.statCard {
+  border: 1px solid #243445;
+  border-radius: 8px;
+  background: rgba(17, 26, 36, 0.96);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22);
+}
+
+.sidebar {
+  position: sticky;
+  top: 14px;
+  height: calc(100vh - 28px);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 18px;
+  padding: 16px;
+}
+
+.brandBlock {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.brandMark {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #5de1ff, #7cffb2);
+  color: #071018;
+  font-weight: 900;
+  font-size: 24px;
+}
+
+#status,
+.workspaceHeader p,
+.sectionHead p,
+.securityNote,
+.muted,
+.empty,
+small {
+  color: #a9bac8;
+}
+
+#status {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.sideNav {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.navButton {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: #d9e8f2;
+  border: 1px solid transparent;
+}
+
+.navButton.active,
+.navButton:hover,
+.authTabs button.active {
+  background: #182433;
+  border-color: #304458;
+  color: #5de1ff;
+}
+
+.pairCard {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.pairCard span {
+  color: #a9bac8;
+  font-size: 13px;
+}
+
+.pairCard img {
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.qrPanel img {
+  width: min(280px, 100%);
+  aspect-ratio: 1;
+  justify-self: center;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.workspace {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.workspaceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+}
+
+.welcomeUser {
+  margin-left: auto;
+  display: grid;
+  gap: 4px;
+  min-width: 160px;
+  padding: 10px 12px;
+  border: 1px solid #304458;
+  border-radius: 8px;
+  background: #0c1620;
+}
+
+.welcomeUser span {
+  color: #a9bac8;
+  font-size: 12px;
+}
+
+.welcomeUser strong {
+  color: #7cffb2;
+}
+
+.serverPill {
+  min-width: 190px;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #0c1620;
+  border: 1px solid #304458;
+}
+
+.serverPill span {
+  color: #a9bac8;
+  font-size: 12px;
+}
+
+.page {
+  display: none;
+}
+
+.page.active {
+  display: grid;
+  gap: 16px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.statCard {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.statCard span {
+  color: #a9bac8;
+  font-size: 13px;
+}
+
+.statCard strong {
+  font-size: 30px;
+  color: #7cffb2;
+}
+
+.panel {
+  padding: 16px;
+}
+
+.compose {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.check input {
+  width: 18px;
+  min-height: 18px;
+}
+
+#sendResult {
+  grid-column: 1 / -1;
+  min-height: 20px;
+  color: #a9bac8;
+}
+
+.twoColumn {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.75fr);
+  gap: 16px;
+}
+
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.messageTools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.messageTools input {
+  min-width: 260px;
+  max-width: 360px;
+}
+
+.messageTools select {
+  width: auto;
+  min-width: 150px;
+}
+
+.secondary {
+  background: #182433;
+  color: #f3f8fc;
+  border: 1px solid #304458;
+}
+
+.danger,
+.deleteLog {
+  background: #ff8f8f;
+  color: #071018;
+}
+
+.compact {
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.list,
+.logList,
+.applicationsList {
+  display: grid;
+  gap: 10px;
+}
+
+.item,
+.log,
+.applicationCard {
+  border: 1px solid #243445;
+  border-radius: 8px;
+  padding: 12px;
+  background: #0c1620;
+}
+
+.deviceHead,
+.deviceActions,
+.logTop,
+.logFoot,
+.applicationCard,
+.applicationActions,
+.modalActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.deviceActions {
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.statusBadge {
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.statusBadge.online {
+  background: rgba(124, 255, 178, 0.14);
+  color: #7cffb2;
+}
+
+.statusBadge.available {
+  background: rgba(93, 225, 255, 0.14);
+  color: #5de1ff;
+}
+
+.statusBadge.busy {
+  background: rgba(255, 207, 92, 0.16);
+  color: #ffcf5c;
+}
+
+.statusBadge.offline {
+  background: rgba(255, 107, 107, 0.14);
+  color: #ff8f8f;
+}
+
+.logTop {
+  color: #a9bac8;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.log p {
+  line-height: 1.45;
+}
+
+.logFoot {
+  margin-top: 10px;
+}
+
+.deleteLog {
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.applicationCard {
+  align-items: stretch;
+}
+
+.applicationCard > div:first-child {
+  display: grid;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.applicationCard code {
+  flex: 1;
+  min-width: 220px;
+}
+
+.applicationActions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.sampleGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.7fr) 1fr;
+  gap: 9px 14px;
+}
+
+.metaGrid span,
+.pairingPanel span {
+  color: #a9bac8;
+}
+
+.pairingPanel {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 12px;
+}
+
+.pairingPanel div {
+  display: grid;
+  gap: 6px;
+}
+
+.pairingPanel p,
+.securityNote {
+  grid-column: 1 / -1;
+  margin-top: 12px;
+  line-height: 1.45;
+}
+
+.installPanel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.installPanel p {
+  color: #a9bac8;
+  line-height: 1.45;
+}
+
+.downloadButton {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 0 18px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #5de1ff, #7cffb2);
+  color: #071018;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.68);
+}
+
+.modalPanel {
+  width: min(460px, 100%);
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid #304458;
+  border-radius: 8px;
+  background: #111a24;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+}
+
+.authModal {
+  z-index: 50;
+}
+
+.authPanel {
+  width: min(520px, 100%);
+}
+
+.authTabs,
+.authFields {
+  display: grid;
+  gap: 10px;
+}
+
+.authTabs {
+  grid-template-columns: 1fr 1fr;
+}
+
+.setupWarning {
+  padding: 12px;
+  border: 1px solid rgba(255, 143, 143, 0.5);
+  border-radius: 8px;
+  background: rgba(255, 143, 143, 0.12);
+  color: #ffb3b3;
+  line-height: 1.45;
+}
+
+.resendOtpTimer {
+  min-height: 18px;
+}
+
+#logoutButton {
+  width: 100%;
+  min-height: 24px;
+  padding: 1px 9px;
+  font-size: 12px;
+  line-height: 1;
+  justify-self: stretch;
+  align-self: end;
+}
+
+@media (max-width: 1040px) {
+  .appShell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    grid-template-rows: auto;
+  }
+
+  .sideNav {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .navButton {
+    text-align: center;
+    padding: 0 8px;
+  }
+
+  .pairCard {
+    display: none;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .twoColumn {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .appShell {
+    width: min(100vw - 20px, 680px);
+    margin: 10px auto;
+  }
+
+  .workspaceHeader,
+  .sectionHead,
+  .applicationCard,
+  .applicationActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sideNav {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .compose,
+  .statsGrid,
+  .sampleGrid,
+  .pairingPanel {
+    grid-template-columns: 1fr;
+  }
+
+  .messageTools,
+  .messageTools input,
+  .messageTools select {
+    width: 100%;
+    max-width: none;
+  }
+
+  .messageTools {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

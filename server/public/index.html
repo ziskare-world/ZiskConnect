@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Zisk Connect</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="appShell">
+      <aside class="sidebar">
+        <div class="brandBlock">
+          <div class="brandMark">Z</div>
+          <div>
+            <h1>Zisk Connect</h1>
+            <p id="status">Starting dashboard...</p>
+          </div>
+        </div>
+
+        <nav class="sideNav" aria-label="Dashboard pages">
+          <button class="navButton active" data-page="overview">Overview</button>
+          <button class="navButton" data-page="messages">Messages</button>
+          <button class="navButton" data-page="devices">Devices</button>
+          <button class="navButton" data-page="applications">Applications</button>
+          <button class="navButton" data-page="system">System</button>
+        </nav>
+
+        <button id="logoutButton" class="secondary hidden">Sign out</button>
+      </aside>
+
+      <section class="workspace">
+        <header class="workspaceHeader">
+          <div>
+            <h2 id="pageTitle">Overview</h2>
+            <p id="pageDescription">Send SMS, monitor connected phones, and keep the bridge healthy.</p>
+          </div>
+          <div id="welcomeUser" class="welcomeUser hidden"></div>
+          <div class="serverPill">
+            <span id="pairingHostText">detecting</span>
+            <strong id="pairingPortText">3001</strong>
+          </div>
+        </header>
+
+        <section id="overviewPage" class="page active">
+          <section class="statsGrid">
+            <article class="statCard">
+              <span>Online devices</span>
+              <strong id="statOnline">0</strong>
+            </article>
+            <article class="statCard">
+              <span>Available</span>
+              <strong id="statAvailable">0</strong>
+            </article>
+            <article class="statCard">
+              <span>Queue</span>
+              <strong id="statQueue">0</strong>
+            </article>
+            <article class="statCard">
+              <span>SMS logs</span>
+              <strong id="statLogs">0</strong>
+            </article>
+          </section>
+
+          <section class="compose panel">
+            <input id="address" placeholder="Recipient phone number" autocomplete="off">
+            <textarea id="body" placeholder="Message"></textarea>
+            <label class="check"><input id="flash" type="checkbox"> Flash/Class-0 request</label>
+            <button id="send">Send</button>
+            <p id="sendResult"></p>
+          </section>
+
+          <section class="twoColumn">
+            <article class="panel">
+              <div class="sectionHead">
+                <h3>Recent SMS</h3>
+                <button class="secondary compact" data-page-jump="messages">View all</button>
+              </div>
+              <div id="recentLogs" class="logList empty">No SMS logs yet</div>
+            </article>
+            <article class="panel">
+              <div class="sectionHead">
+                <h3>Active Queue</h3>
+                <button class="secondary compact" data-page-jump="devices">Manage</button>
+              </div>
+              <div id="queuePreview" class="list empty">No queued commands</div>
+            </article>
+          </section>
+        </section>
+
+        <section id="messagesPage" class="page">
+          <section class="panel">
+            <div class="sectionHead">
+              <h3>SMS Logs</h3>
+              <div class="messageTools">
+                <input id="filter" placeholder="Search number, message, app, or status">
+                <select id="directionFilter">
+                  <option value="">All directions</option>
+                  <option value="incoming">Incoming</option>
+                  <option value="outgoing">Outgoing</option>
+                </select>
+                <select id="statusFilter">
+                  <option value="">All statuses</option>
+                </select>
+                <select id="applicationFilter">
+                  <option value="">All applications</option>
+                </select>
+                <select id="deviceFilter">
+                  <option value="">All devices</option>
+                </select>
+                <button id="exportJson" class="secondary">Export JSON</button>
+                <button id="exportCsv" class="secondary">Export CSV</button>
+                <button id="clearLogs" class="danger">Clear logs</button>
+              </div>
+            </div>
+            <div id="logs" class="logList empty">No SMS logs yet</div>
+          </section>
+        </section>
+
+        <section id="devicesPage" class="page">
+          <section class="twoColumn">
+            <article class="panel">
+              <div class="sectionHead">
+                <h3>Devices</h3>
+                <button id="addDevice">Add Device</button>
+              </div>
+              <div id="devices" class="list empty">No devices connected</div>
+            </article>
+            <article class="panel">
+              <h3>Queue</h3>
+              <div id="queue" class="list empty">No queued commands</div>
+            </article>
+          </section>
+        </section>
+
+        <section id="applicationsPage" class="page">
+          <section class="panel">
+            <div class="sectionHead">
+              <div>
+                <h3>Manage Applications</h3>
+                <p>Create API keys for other apps and services to send SMS or read received SMS logs.</p>
+              </div>
+              <button id="addApplication">Add Application</button>
+            </div>
+            <div id="applicationsList" class="applicationsList empty">No applications added yet</div>
+          </section>
+
+          <section class="samplePanel panel">
+            <h3>Sample API Code</h3>
+            <div class="sampleGrid">
+              <article>
+                <h4>Send message</h4>
+                <pre><code id="sendSample"></code></pre>
+              </article>
+              <article>
+                <h4>Receive messages</h4>
+                <pre><code id="receiveSample"></code></pre>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <section id="systemPage" class="page">
+          <section class="twoColumn">
+            <article class="panel">
+              <h3>Server Health</h3>
+              <div id="health" class="metaGrid empty">Loading health...</div>
+            </article>
+            <article class="panel">
+              <h3>Pairing Details</h3>
+              <div class="pairingPanel">
+                <div>
+                  <span>User code</span>
+                  <strong id="systemUserCodeText">detecting</strong>
+                </div>
+                <div>
+                  <span>Phone server IP</span>
+                  <strong id="systemHostText">detecting</strong>
+                </div>
+                <div>
+                  <span>Port</span>
+                  <strong id="systemPortText">3001</strong>
+                </div>
+                <p id="pairingPreview"></p>
+              </div>
+              <p class="securityNote">Local/private mode: use HTTPS, firewall rules, and reverse-proxy protection before exposing this dashboard on the public internet.</p>
+            </article>
+            <article class="panel installPanel">
+              <h3>Android App</h3>
+              <p>Download the latest Zisk Connect APK from this server and install it on your Android phone.</p>
+              <a id="downloadApk" class="downloadButton" href="/api/downloads/android-apk" download>Download Android APK</a>
+              <small>After installing, open the app and scan an Add Device QR from the Devices page.</small>
+            </article>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <div id="applicationModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="applicationModalTitle">
+      <div class="modalPanel">
+        <h3 id="applicationModalTitle">Add Application</h3>
+        <p>Enter an application name. A new API key will be generated and saved in the data folder.</p>
+        <input id="applicationName" placeholder="Application name" autocomplete="off">
+        <p id="applicationResult" class="muted"></p>
+        <div class="modalActions">
+          <button id="cancelApplication" class="secondary">Cancel</button>
+          <button id="createApplication">Generate API Key</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="authModal" class="modal authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <div class="modalPanel authPanel">
+        <div>
+          <h3 id="authTitle">Sign in to Zisk Connect</h3>
+          <p id="authSubtitle">Use your dashboard account to continue.</p>
+        </div>
+
+        <div id="authSetupWarning" class="setupWarning hidden">
+          MongoDB authentication is not configured. Set <code>MONGODB_URI</code> and Gmail SMTP env vars, then restart the server.
+        </div>
+
+        <div class="authTabs">
+          <button id="showSignin" class="secondary active" type="button">Sign in</button>
+          <button id="showSignup" class="secondary" type="button">Sign up</button>
+        </div>
+
+        <div id="authFields" class="authFields">
+          <input id="authName" class="hidden" placeholder="Name" autocomplete="name">
+          <input id="authEmail" placeholder="Email" autocomplete="email">
+          <div id="authPasswordWrap" class="passwordField">
+            <input id="authPassword" type="password" placeholder="Password" autocomplete="current-password">
+            <button class="passwordToggle" type="button" data-target="authPassword" aria-label="Show password"></button>
+          </div>
+        </div>
+
+        <div id="otpFields" class="authFields hidden">
+          <input id="otpCode" placeholder="6-digit OTP" inputmode="numeric" autocomplete="one-time-code">
+          <button id="resendOtp" class="secondary" type="button">Resend OTP</button>
+          <small id="resendOtpTimer" class="resendOtpTimer"></small>
+        </div>
+
+        <div id="resetPasswordFields" class="authFields hidden">
+          <div class="passwordField">
+            <input id="newPassword" type="password" placeholder="New password" autocomplete="new-password">
+            <button class="passwordToggle" type="button" data-target="newPassword" aria-label="Show new password"></button>
+          </div>
+          <div class="passwordField">
+            <input id="confirmPassword" type="password" placeholder="Confirm password" autocomplete="new-password">
+            <button class="passwordToggle" type="button" data-target="confirmPassword" aria-label="Show confirm password"></button>
+          </div>
+        </div>
+
+        <p id="authMessage" class="muted"></p>
+        <button id="authSubmit" type="button">Continue</button>
+        <button id="forgotPassword" class="linkButton" type="button">Forgot password?</button>
+      </div>
+    </div>
+
+    <div id="devicePairingModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="devicePairingTitle">
+      <div class="modalPanel qrPanel">
+        <h3 id="devicePairingTitle">Add Android Device</h3>
+        <p>Scan this QR from the Zisk Connect Android app. This token is unique to one phone.</p>
+        <img id="devicePairingQr" alt="Add device QR code">
+        <p id="devicePairingResult" class="muted"></p>
+        <div class="modalActions">
+          <button id="cancelDevicePairing" class="secondary" type="button">Cancel</button>
+          <button id="closeDevicePairing" type="button">Done</button>
+        </div>
+      </div>
+    </div>
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+<resources>
+    <color name="primary">#5DE1FF</color>
+    <color name="primary_dark">#061119</color>
+    <color name="secondary">#7CFFB2</color>
+    <color name="surface">#111A24</color>
+    <color name="surface_high">#182433</color>
+    <color name="background">#071018</color>
+    <color name="text_primary">#F3F8FC</color>
+    <color name="text_secondary">#A9BAC8</color>
+    <color name="field_background">#0C1620</color>
+    <color name="field_stroke">#304458</color>
+    <color name="logo_background">#071018</color>
+</resources>

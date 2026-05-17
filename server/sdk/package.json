@@ -1,0 +1,9 @@
+{
+  "name": "zisk-connect-client",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./zisk-connect-client.js",
+  "exports": {
+    ".": "./zisk-connect-client.js"
+  }
+}

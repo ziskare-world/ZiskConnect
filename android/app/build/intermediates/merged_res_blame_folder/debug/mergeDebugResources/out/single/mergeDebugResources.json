@@ -1,0 +1,54 @@
+[
+    {
+        "merged": "com.ziskconnect.smsbridge.app-debug-34:/menu_bottom_nav_menu.xml.flat",
+        "source": "com.ziskconnect.smsbridge.app-main-36:/menu/bottom_nav_menu.xml"
+    },
+    {
+        "merged": "com.ziskconnect.smsbridge.app-debug-34:/drawable_ic_permission.xml.flat",
+        "source": "com.ziskconnect.smsbridge.app-main-36:/drawable/ic_permission.xml"
+    },
+    {
+        "merged": "com.ziskconnect.smsbridge.app-debug-34:/layout_view_home.xml.flat",
+        "source": "com.ziskconnect.smsbridge.app-main-36:/layout/view_home.xml"
+    },
+    {
+        "merged": "com.ziskconnect.smsbridge.app-debug-34:/layout_view_permission.xml.flat",
+        "source": "com.ziskconnect.smsbridge.app-main-36:/layout/view_permission.xml"
+    },
+    {
+        "merged": "com.ziskconnect.smsbridge.app-debug-34:/drawable_bg_delete_button.xml.flat",
+        "source": "com.ziskconnect.smsbridge.app-main-36:/drawable/bg_delete_button.xml"
+    },
+    {
+        "merged": "com.ziskconnect.smsbridge.app-debug-34:/drawable_ic_delete.xml.flat",
+        "source": "com.ziskconnect.smsbridge.app-main-36:/drawable/ic_delete.xml"
+    },
+    {
+        "merged": "com.ziskconnect.smsbridge.app-debug-34:/drawable_ic_home.xml.flat",
+        "source": "com.ziskconnect.smsbridge.app-main-36:/drawable/ic_home.xml"
+    },
+    {
+        "merged": "com.ziskconnect.smsbridge.app-debug-34:/drawable_ic_logs.xml.flat",
+        "source": "com.ziskconnect.smsbridge.app-main-36:/drawable/ic_logs.xml"
+    },
+    {
+        "merged": "com.ziskconnect.smsbridge.app-debug-34:/drawable_ic_app_logo.xml.flat",
+        "source": "com.ziskconnect.smsbridge.app-main-36:/drawable/ic_app_logo.xml"
+    },
+    {
+        "merged": "com.ziskconnect.smsbridge.app-debug-34:/layout_activity_main.xml.flat",
+        "source": "com.ziskconnect.smsbridge.app-main-36:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.ziskconnect.smsbridge.app-debug-34:/layout_view_logs.xml.flat",
+        "source": "com.ziskconnect.smsbridge.app-main-36:/layout/view_logs.xml"
+    },
+    {
+        "merged": "com.ziskconnect.smsbridge.app-debug-34:/xml_network_security_config.xml.flat",
+        "source": "com.ziskconnect.smsbridge.app-main-36:/xml/network_security_config.xml"
+    },
+    {
+        "merged": "com.ziskconnect.smsbridge.app-debug-34:/color_bottom_nav_item.xml.flat",
+        "source": "com.ziskconnect.smsbridge.app-main-36:/color/bottom_nav_item.xml"
+    }
+]

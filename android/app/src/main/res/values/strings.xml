@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Zisk Connect</string>
+    <string name="home">Home</string>
+    <string name="logs">Logs</string>
+    <string name="permission">Permission</string>
+    <string name="notification_channel_bridge">Bridge connection</string>
+</resources>
