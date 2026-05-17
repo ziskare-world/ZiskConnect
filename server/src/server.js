@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import crypto from 'node:crypto';
 import express from 'express';
+import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
@@ -16,7 +17,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 const publicDir = path.join(rootDir, 'public');
 const downloadsDir = path.join(rootDir, 'downloads');
-const androidApkPath = path.join(downloadsDir, 'zisk-connect-release.apk');
 const legacyDataFile = path.join(rootDir, 'data', 'store.json');
 const legacyApplicationsFile = path.join(rootDir, 'data', 'applications.json');
 const port = Number(process.env.PORT || 3001);
@@ -24,6 +24,19 @@ const host = process.env.HOST || '0.0.0.0';
 const mongoUri = process.env.MONGODB_URI || '';
 const dbName = process.env.MONGODB_DB || 'zisk_connect';
 const sessionSecret = process.env.SESSION_SECRET || 'zisk-connect-local-dev-session-secret-change-me';
+
+function findAndroidApk() {
+  if (!fs.existsSync(downloadsDir)) return null;
+  const apks = fs.readdirSync(downloadsDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.apk'))
+    .map((entry) => {
+      const filePath = path.join(downloadsDir, entry.name);
+      const stats = fs.statSync(filePath);
+      return { name: entry.name, path: filePath, mtimeMs: stats.mtimeMs };
+    })
+    .sort((a, b) => b.mtimeMs - a.mtimeMs);
+  return apks[0] || null;
+}
 
 let store;
 let applications;
@@ -526,9 +539,14 @@ app.get('/api/state', auth.requireAuth, (_req, res) => {
 });
 
 app.get('/api/downloads/android-apk', auth.requireAuth, (req, res) => {
-  res.download(androidApkPath, 'zisk-connect-release.apk', (error) => {
+  const apk = findAndroidApk();
+  if (!apk) {
+    res.status(404).json({ error: 'Android APK is not available yet. Add an APK file to server/downloads first.' });
+    return;
+  }
+  res.download(apk.path, apk.name, (error) => {
     if (!res.headersSent && error) {
-      res.status(404).json({ error: 'Android APK is not available yet. Build the release APK first.' });
+      res.status(404).json({ error: 'Android APK is not available yet. Add an APK file to server/downloads first.' });
     }
   });
 });

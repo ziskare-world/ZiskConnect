@@ -27,6 +27,7 @@ local.properties
 dist/
 build/
 server/downloads/*.apk
+!server/downloads/Ziskconnect.apk
 
 # Runtime data, logs, and local smoke output
 server/data/
