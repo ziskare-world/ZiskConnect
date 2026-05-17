@@ -797,6 +797,14 @@ app.delete('/api/sms/logs', auth.requireAuth, async (_req, res, next) => {
   }
 });
 
+app.use('/api', (error, _req, res, _next) => {
+  console.error('API request failed:', error.message);
+  if (res.headersSent) return;
+  res.status(error.status || 500).json({
+    error: error.message || 'Server request failed'
+  });
+});
+
 server.on('upgrade', async (req, socket, head) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const role = url.searchParams.get('role') || 'dashboard';

@@ -166,6 +166,8 @@ export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmail
       await database.collection('users').createIndex({ email: 1 }, { unique: true });
       await database.collection('users').createIndex({ userCode: 1 }, { unique: true, sparse: true });
       await database.collection('users').createIndex({ pairingToken: 1 }, { unique: true, sparse: true });
+      await database.collection('pendingUsers').createIndex({ email: 1 }, { unique: true });
+      await database.collection('pendingUsers').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
       await database.collection('otps').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
       await database.collection('passwordResets').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
       return database;
@@ -309,7 +311,7 @@ export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmail
       return;
     }
       const database = await db();
-      const user = await database.collection('users').findOne({ _id: new ObjectId(session.id) });
+      const user = await database.collection('users').findOne({ _id: new ObjectId(session.id), verifiedAt: { $ne: null } });
       const normalized = user ? await ensureUserIdentity(user) : null;
       if (!normalized) {
         res.status(401).json({ error: 'Sign in required' });
@@ -345,7 +347,7 @@ export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmail
         return;
       }
       const database = await db();
-      const user = await database.collection('users').findOne({ _id: new ObjectId(session.id) });
+      const user = await database.collection('users').findOne({ _id: new ObjectId(session.id), verifiedAt: { $ne: null } });
       const normalized = user ? await ensureUserIdentity(user) : null;
       res.json({
         authenticated: Boolean(normalized),
@@ -373,29 +375,30 @@ export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmail
       }
       const database = await db();
       const existing = await database.collection('users').findOne({ email });
-      if (existing?.verifiedAt) {
+      if (existing) {
         res.status(409).json({ error: 'Account already exists. Please sign in.' });
         return;
       }
-      await database.collection('users').updateOne(
+      await database.collection('pendingUsers').updateOne(
         { email },
         {
           $set: {
             name,
             email,
             passwordHash: hashPassword(password),
-            updatedAt: new Date()
-          },
-          $setOnInsert: {
-            userCode: createUserCode(),
-            pairingToken: createPairingToken(),
             createdAt: new Date(),
-            verifiedAt: null
+            expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+            updatedAt: new Date()
           }
         },
         { upsert: true }
       );
-      await sendOtp(email, 'signup');
+      try {
+        await sendOtp(email, 'signup');
+      } catch (error) {
+        await database.collection('pendingUsers').deleteOne({ email });
+        throw error;
+      }
       res.json({ ok: true, otpRequired: true, email });
     } catch (error) {
       next(error);
@@ -409,12 +412,17 @@ export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmail
       const database = await db();
       const user = await database.collection('users').findOne({ email });
       if (!user || !verifyPassword(password, user.passwordHash)) {
+        const pending = await database.collection('pendingUsers').findOne({ email });
+        if (pending && verifyPassword(password, pending.passwordHash)) {
+          await sendOtp(email, 'signup');
+          res.status(403).json({ error: 'OTP verification required. Please verify your email before signing in.', otpRequired: true, email });
+          return;
+        }
         res.status(401).json({ error: 'Invalid email or password' });
         return;
       }
       if (!user.verifiedAt) {
-        await sendOtp(email, 'signup');
-        res.status(403).json({ error: 'OTP verification required', otpRequired: true, email });
+        res.status(403).json({ error: 'Account is not verified. Please create the account again and verify OTP.' });
         return;
       }
       const normalized = await ensureUserIdentity(user);
@@ -536,16 +544,37 @@ export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmail
         res.status(400).json({ error: 'Invalid or expired OTP' });
         return;
       }
+      const pending = await database.collection('pendingUsers').findOne({
+        email,
+        expiresAt: { $gt: new Date() }
+      });
+      if (!pending) {
+        res.status(400).json({ error: 'Signup session expired. Please create the account again.' });
+        return;
+      }
+      const userCode = createUserCode();
+      const pairingToken = createPairingToken();
+      await database.collection('users').insertOne({
+        name: pending.name || '',
+        email,
+        passwordHash: pending.passwordHash,
+        userCode,
+        pairingToken,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        verifiedAt: new Date()
+      });
       await database.collection('otps').updateOne({ _id: otpDoc._id }, { $set: { usedAt: new Date() } });
-      const user = await database.collection('users').findOneAndUpdate(
-        { email },
-        { $set: { verifiedAt: new Date(), updatedAt: new Date() } },
-        { returnDocument: 'after' }
-      );
+      await database.collection('pendingUsers').deleteOne({ _id: pending._id });
+      const user = await database.collection('users').findOne({ email });
       const normalized = await ensureUserIdentity(user);
       setCookie(res, createSessionCookie(normalized, sessionSecret));
       res.json({ ok: true, user: { id: normalized._id.toString(), email: normalized.email, name: normalized.name || '', userCode: normalized.userCode } });
     } catch (error) {
+      if (error?.code === 11000) {
+        res.status(409).json({ error: 'Account already exists. Please sign in.' });
+        return;
+      }
       next(error);
     }
   });
@@ -565,8 +594,17 @@ export function createAuth({ mongoUri, dbName = 'zisk_connect', gmailUser, gmail
         res.status(429).json({ error: `Please wait ${retryAfter}s before resending OTP.`, retryAfter });
         return;
       }
-      const user = await database.collection('users').findOne({ email, verifiedAt: { $ne: null } });
-      if (purpose !== 'password_reset' || user) await sendOtp(email, purpose);
+      if (purpose === 'signup') {
+        const pending = await database.collection('pendingUsers').findOne({ email, expiresAt: { $gt: new Date() } });
+        if (!pending) {
+          res.status(400).json({ error: 'Signup session expired. Please create the account again.' });
+          return;
+        }
+        await sendOtp(email, purpose);
+      } else {
+        const user = await database.collection('users').findOne({ email, verifiedAt: { $ne: null } });
+        if (user) await sendOtp(email, purpose);
+      }
       res.json({ ok: true, retryAfter: 60 });
     } catch (error) {
       next(error);
