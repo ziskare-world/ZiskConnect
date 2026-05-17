@@ -1,0 +1,41 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+server/.env
+server/.env.*
+!server/.env.example
+
+# Node.js
+node_modules/
+server/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Android and Gradle
+.gradle/
+android/.gradle/
+android/.gradle-build-cache/
+android/build/
+android/app/build/
+android/local.properties
+local.properties
+
+# Build outputs and downloadable generated files
+dist/
+build/
+server/downloads/*.apk
+
+# Runtime data, logs, and local smoke output
+server/data/
+*.log
+server/*.log
+
+# IDE and OS files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
