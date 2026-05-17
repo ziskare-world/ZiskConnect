@@ -103,6 +103,7 @@ Object.assign(els, {
 });
 
 let resendOtpInterval = null;
+let healthQueueInterval = null;
 const eyeIcon = `
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M2.2 12s3.5-6 9.8-6 9.8 6 9.8 6-3.5 6-9.8 6-9.8-6-9.8-6z"></path>
@@ -406,6 +407,7 @@ async function loadState() {
 async function authFetch(url, options = {}) {
   const response = await fetch(url, {
     ...options,
+    credentials: 'same-origin',
     headers: {
       ...(options.headers || {}),
       ...(options.body ? { 'content-type': 'application/json' } : {})
@@ -414,6 +416,7 @@ async function authFetch(url, options = {}) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const error = new Error(data.error || 'Authentication failed');
+    error.status = response.status;
     error.data = data;
     throw error;
   }
@@ -530,6 +533,19 @@ function hideAuthModal() {
   els.logoutButton.classList.remove('hidden');
 }
 
+function stopHealthQueuePolling() {
+  if (!healthQueueInterval) return;
+  clearInterval(healthQueueInterval);
+  healthQueueInterval = null;
+}
+
+function handleAuthExpired() {
+  stopHealthQueuePolling();
+  els.logoutButton.classList.add('hidden');
+  els.welcomeUser.classList.add('hidden');
+  showAuthModal('Sign in required. Please sign in again.');
+}
+
 function setCurrentUser(user) {
   const displayName = user?.name || user?.email || 'User';
   state.userCode = user?.userCode || state.userCode || '';
@@ -557,13 +573,18 @@ async function loadApplications() {
 }
 
 async function loadHealthAndQueue() {
-  const [health, queue] = await Promise.all([
-    authedFetch('/api/health'),
-    authedFetch('/api/queue')
-  ]);
-  state.health = health;
-  state.queue = queue.queue || [];
-  renderAll();
+  try {
+    const [health, queue] = await Promise.all([
+      authedFetch('/api/health'),
+      authedFetch('/api/queue')
+    ]);
+    state.health = health;
+    state.queue = queue.queue || [];
+    renderAll();
+  } catch (error) {
+    if (error.status === 401) handleAuthExpired();
+    throw error;
+  }
 }
 
 function connectSocket() {
@@ -610,13 +631,19 @@ els.deviceFilter.addEventListener('change', renderLogs);
 async function authedFetch(url, options = {}) {
   const response = await fetch(url, {
     ...options,
+    credentials: 'same-origin',
     headers: {
       ...(options.headers || {}),
       'x-pairing-token': state.token
     }
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Request failed');
+  if (!response.ok) {
+    const error = new Error(data.error || 'Request failed');
+    error.status = response.status;
+    error.data = data;
+    throw error;
+  }
   return data;
 }
 
@@ -921,6 +948,14 @@ async function startDashboard() {
   await loadState();
   await Promise.all([loadApplications(), loadHealthAndQueue()]);
   connectSocket();
+  startHealthQueuePolling();
+}
+
+function startHealthQueuePolling() {
+  stopHealthQueuePolling();
+  healthQueueInterval = setInterval(() => {
+    loadHealthAndQueue().catch(() => {});
+  }, 10000);
 }
 
 ensureAuthenticated().then((ok) => {
@@ -929,7 +964,3 @@ ensureAuthenticated().then((ok) => {
 }).catch((error) => {
   showAuthModal(error.message);
 });
-
-setInterval(() => {
-  loadHealthAndQueue().catch(() => {});
-}, 10000);
