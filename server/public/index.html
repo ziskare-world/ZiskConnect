@@ -216,7 +216,7 @@
         </div>
 
         <div id="authSetupWarning" class="setupWarning hidden">
-          MongoDB authentication is not configured. Set <code>MONGODB_URI</code> and Gmail SMTP env vars, then restart the server.
+          MongoDB authentication is not configured. Set <code>MONGODB_URI</code>, then restart the server.
         </div>
 
         <div class="authTabs">
@@ -233,26 +233,8 @@
           </div>
         </div>
 
-        <div id="otpFields" class="authFields hidden">
-          <input id="otpCode" placeholder="6-digit OTP" inputmode="numeric" autocomplete="one-time-code">
-          <button id="resendOtp" class="secondary" type="button">Resend OTP</button>
-          <small id="resendOtpTimer" class="resendOtpTimer"></small>
-        </div>
-
-        <div id="resetPasswordFields" class="authFields hidden">
-          <div class="passwordField">
-            <input id="newPassword" type="password" placeholder="New password" autocomplete="new-password">
-            <button class="passwordToggle" type="button" data-target="newPassword" aria-label="Show new password"></button>
-          </div>
-          <div class="passwordField">
-            <input id="confirmPassword" type="password" placeholder="Confirm password" autocomplete="new-password">
-            <button class="passwordToggle" type="button" data-target="confirmPassword" aria-label="Show confirm password"></button>
-          </div>
-        </div>
-
         <p id="authMessage" class="muted"></p>
         <button id="authSubmit" type="button">Continue</button>
-        <button id="forgotPassword" class="linkButton" type="button">Forgot password?</button>
       </div>
     </div>
 

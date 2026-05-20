@@ -51,8 +51,6 @@ try {
 const auth = createAuth({
   mongoUri,
   dbName,
-  gmailUser: process.env.GMAIL_USER || '',
-  gmailAppPassword: process.env.GMAIL_APP_PASSWORD || '',
   sessionSecret
 });
 const app = express();

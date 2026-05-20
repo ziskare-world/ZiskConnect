@@ -10,10 +10,7 @@ const state = {
   health: null,
   userCode: '',
   currentPage: 'overview',
-  authMode: 'signin',
-  otpEmail: '',
-  otpRequired: false,
-  resetToken: ''
+  authMode: 'signin'
 };
 
 const pageMeta = {
@@ -89,21 +86,12 @@ Object.assign(els, {
   authPassword: document.querySelector('#authPassword'),
   authPasswordWrap: document.querySelector('#authPasswordWrap'),
   authFields: document.querySelector('#authFields'),
-  otpFields: document.querySelector('#otpFields'),
-  otpCode: document.querySelector('#otpCode'),
-  resendOtp: document.querySelector('#resendOtp'),
-  resetPasswordFields: document.querySelector('#resetPasswordFields'),
-  newPassword: document.querySelector('#newPassword'),
-  confirmPassword: document.querySelector('#confirmPassword'),
   authMessage: document.querySelector('#authMessage'),
   authSubmit: document.querySelector('#authSubmit'),
   logoutButton: document.querySelector('#logoutButton'),
-  resendOtpTimer: document.querySelector('#resendOtpTimer'),
-  forgotPassword: document.querySelector('#forgotPassword'),
   screenLoader: document.querySelector('#screenLoader')
 });
 
-let resendOtpInterval = null;
 let healthQueueInterval = null;
 let loaderDepth = 0;
 const eyeIcon = `
@@ -446,32 +434,20 @@ async function authFetch(url, options = {}) {
 
 function setAuthMode(mode) {
   state.authMode = mode;
-  state.otpRequired = false;
-  state.resetToken = '';
-  stopOtpResendTimer();
   els.authName.classList.toggle('hidden', mode !== 'signup');
-  els.authPasswordWrap.classList.toggle('hidden', mode === 'forgot');
-  els.otpFields.classList.add('hidden');
-  els.resetPasswordFields.classList.add('hidden');
+  els.authPasswordWrap.classList.remove('hidden');
   els.authFields.classList.remove('hidden');
   els.showSignin.classList.toggle('active', mode === 'signin');
   els.showSignup.classList.toggle('active', mode === 'signup');
-  els.forgotPassword.classList.toggle('hidden', mode !== 'signin');
   els.authTitle.textContent = mode === 'signup'
     ? 'Create Zisk Connect account'
-    : mode === 'forgot'
-      ? 'Reset password'
-      : 'Sign in to Zisk Connect';
+    : 'Sign in to Zisk Connect';
   els.authSubtitle.textContent = mode === 'signup'
-    ? 'We will send a Gmail OTP to verify your email.'
-    : mode === 'forgot'
-      ? 'Enter your email and we will send a reset OTP.'
-      : 'Use your dashboard account to continue.';
+    ? 'Create your dashboard account and start using Zisk Connect.'
+    : 'Use your dashboard account to continue.';
   els.authSubmit.textContent = mode === 'signup'
     ? 'Create account'
-    : mode === 'forgot'
-      ? 'Send reset OTP'
-      : 'Sign in';
+    : 'Sign in';
   els.authMessage.textContent = '';
 }
 
@@ -489,60 +465,6 @@ document.addEventListener('click', (event) => {
 document.querySelectorAll('.passwordToggle').forEach((toggle) => {
   toggle.innerHTML = eyeIcon;
 });
-
-function stopOtpResendTimer() {
-  if (resendOtpInterval) clearInterval(resendOtpInterval);
-  resendOtpInterval = null;
-  els.resendOtp.disabled = false;
-  els.resendOtp.textContent = 'Resend OTP';
-  els.resendOtpTimer.textContent = '';
-}
-
-function startOtpResendTimer(seconds = 60) {
-  const deadline = Date.now() + Math.max(Number(seconds) || 60, 1) * 1000;
-  if (resendOtpInterval) clearInterval(resendOtpInterval);
-  function tick() {
-    const remaining = Math.max(Math.ceil((deadline - Date.now()) / 1000), 0);
-    if (!remaining) {
-      stopOtpResendTimer();
-      return;
-    }
-    els.resendOtp.disabled = true;
-    els.resendOtp.textContent = `Resend in ${remaining}s`;
-    els.resendOtpTimer.textContent = `You can request a new OTP after ${remaining}s.`;
-  }
-  tick();
-  resendOtpInterval = setInterval(tick, 1000);
-}
-
-function showOtp(email, purpose = 'signup') {
-  state.otpEmail = email;
-  state.otpRequired = true;
-  els.authFields.classList.add('hidden');
-  els.otpFields.classList.remove('hidden');
-  els.resetPasswordFields.classList.add('hidden');
-  els.authTitle.textContent = purpose === 'password_reset' ? 'Verify reset OTP' : 'Verify OTP';
-  els.authSubtitle.textContent = purpose === 'password_reset'
-    ? `Enter the code sent to ${email}.`
-    : `Enter the code sent to ${email}.`;
-  els.authSubmit.textContent = purpose === 'password_reset' ? 'Verify OTP' : 'Verify and continue';
-  els.authMessage.textContent = '';
-  startOtpResendTimer(60);
-  els.otpCode.focus();
-}
-
-function showPasswordResetFields() {
-  state.otpRequired = false;
-  stopOtpResendTimer();
-  els.authFields.classList.add('hidden');
-  els.otpFields.classList.add('hidden');
-  els.resetPasswordFields.classList.remove('hidden');
-  els.authTitle.textContent = 'Create new password';
-  els.authSubtitle.textContent = 'Enter and confirm your new Zisk Connect password.';
-  els.authSubmit.textContent = 'Change password';
-  els.authMessage.textContent = '';
-  els.newPassword.focus();
-}
 
 function showAuthModal(message = '') {
   els.authModal.classList.remove('hidden');
@@ -754,69 +676,21 @@ document.addEventListener('click', async (event) => {
 els.navButtons.forEach((button) => button.addEventListener('click', () => showPage(button.dataset.page)));
 els.showSignin.addEventListener('click', () => setAuthMode('signin'));
 els.showSignup.addEventListener('click', () => setAuthMode('signup'));
-els.forgotPassword.addEventListener('click', () => setAuthMode('forgot'));
 els.authSubmit.addEventListener('click', async () => {
   els.authSubmit.disabled = true;
   els.authMessage.textContent = '';
   showLoader();
   try {
-    if (state.otpRequired) {
-      if (state.authMode === 'forgot') {
-        const data = await authFetch('/api/auth/forgot-password/verify-otp', {
-          method: 'POST',
-          body: JSON.stringify({
-            email: state.otpEmail,
-            otp: els.otpCode.value.trim()
-          })
-        });
-        state.resetToken = data.resetToken || '';
-        els.otpCode.value = '';
-        showPasswordResetFields();
-        els.authMessage.textContent = 'OTP verified. Enter your new password.';
-        return;
-      }
-      await authFetch('/api/auth/verify-otp', {
-        method: 'POST',
-        body: JSON.stringify({ email: state.otpEmail, otp: els.otpCode.value.trim() })
-      });
-      const session = await authFetch('/api/auth/me');
-      setCurrentUser(session.user);
-      hideAuthModal();
-      await startDashboard();
-      return;
-    }
     const email = els.authEmail.value.trim();
     const password = els.authPassword.value;
-    if (state.authMode === 'forgot' && state.resetToken) {
-      await authFetch('/api/auth/forgot-password/reset', {
-        method: 'POST',
-        body: JSON.stringify({
-          resetToken: state.resetToken,
-          password: els.newPassword.value,
-          confirmPassword: els.confirmPassword.value
-        })
-      });
-      els.newPassword.value = '';
-      els.confirmPassword.value = '';
-      setAuthMode('signin');
-      els.authMessage.textContent = 'Password changed. Please sign in with your new password.';
-      return;
-    }
-    if (state.authMode === 'forgot') {
-      const data = await authFetch('/api/auth/forgot-password/request', {
-        method: 'POST',
-        body: JSON.stringify({ email })
-      });
-      showOtp(data.email || email, 'password_reset');
-      els.authMessage.textContent = 'Reset OTP sent. Please check Inbox and Spam/Promotions.';
-      return;
-    }
     if (state.authMode === 'signup') {
       const data = await authFetch('/api/auth/signup', {
         method: 'POST',
         body: JSON.stringify({ name: els.authName.value.trim(), email, password })
       });
-      showOtp(data.email || email, 'signup');
+      setCurrentUser(data.user);
+      hideAuthModal();
+      await startDashboard();
       return;
     }
     const signin = await authFetch('/api/auth/signin', {
@@ -827,29 +701,10 @@ els.authSubmit.addEventListener('click', async () => {
     hideAuthModal();
     await startDashboard();
   } catch (error) {
-    if (error.data?.otpRequired) showOtp(error.data.email || els.authEmail.value.trim(), 'signup');
-    else els.authMessage.textContent = error.message;
+    els.authMessage.textContent = error.message;
   } finally {
     hideLoader();
     els.authSubmit.disabled = false;
-  }
-});
-
-els.resendOtp.addEventListener('click', async () => {
-  try {
-    await withLoader(() => authFetch('/api/auth/resend-otp', {
-      method: 'POST',
-      body: JSON.stringify({
-        email: state.otpEmail,
-        purpose: state.authMode === 'forgot' ? 'password_reset' : 'signup'
-      })
-    })).then((data) => {
-      startOtpResendTimer(data.retryAfter || 60);
-    });
-    els.authMessage.textContent = 'OTP sent again. Please check Inbox and Spam/Promotions.';
-  } catch (error) {
-    if (error.data?.retryAfter) startOtpResendTimer(error.data.retryAfter);
-    els.authMessage.textContent = error.message;
   }
 });
 

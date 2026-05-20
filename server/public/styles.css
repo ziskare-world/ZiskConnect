@@ -660,10 +660,6 @@ small {
   line-height: 1.45;
 }
 
-.resendOtpTimer {
-  min-height: 18px;
-}
-
 #logoutButton {
   width: 100%;
   min-height: 24px;

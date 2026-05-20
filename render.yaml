@@ -15,13 +15,3 @@ services:
         value: zisk_connect
       - key: SESSION_SECRET
         generateValue: true
-      - key: GMAIL_USER
-        sync: false
-      - key: GMAIL_APP_PASSWORD
-        sync: false
-      - key: MAIL_TIMEOUT_MS
-        value: 15000
-      - key: MAIL_QUEUE_DELAY_MS
-        value: 1000
-      - key: MAIL_QUEUE_MAX_SIZE
-        value: 50

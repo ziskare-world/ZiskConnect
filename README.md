@@ -11,7 +11,7 @@ Zisk Connect is a private Android SMS bridge with a Node.js dashboard. It lets a
 - Per-device QR pairing with unique pairing tokens
 - Multi-device support with automatic fallback to another available phone
 - MongoDB-backed users, device pairings, applications, and SMS records
-- Sign in, sign up, OTP verification, and password reset flows
+- Sign in and sign up flows backed by MongoDB sessions
 - Application API keys for external apps and services
 - WebSocket bridge for live device status, queue updates, and SMS events
 - Android APK download route from the dashboard server
@@ -41,7 +41,6 @@ Each Android phone receives its own pairing token. If a device is removed, its o
 
 - Node.js 22 or newer
 - MongoDB Atlas or local MongoDB
-- Gmail app password for OTP email delivery
 - Android Studio or Android Gradle wrapper
 - Android phone with SMS permissions granted
 
@@ -68,8 +67,6 @@ PORT=3001
 MONGODB_URI=mongodb://127.0.0.1:27017
 MONGODB_DB=zisk_connect
 SESSION_SECRET=change-this-secret
-GMAIL_USER=your-email@gmail.com
-GMAIL_APP_PASSWORD=your-gmail-app-password
 ```
 
 For MongoDB Atlas, use your Atlas connection string for `MONGODB_URI`.
