@@ -20,6 +20,11 @@ android/.gradle/
 android/.gradle-build-cache/
 android/build/
 android/app/build/
+android/keystore.properties
+android/release-signing.properties
+android/keystores/
+*.jks
+*.keystore
 android/local.properties
 local.properties
 
